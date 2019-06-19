@@ -1,0 +1,21 @@
+version: "2.3"
+
+services:
+
+    redis:
+        image: redis:4.0.2-alpine
+        restart: always
+        command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --port 6379 --appendonly yes --cluster-node-timeout 5000
+
+    redisclusterizer:
+        build: ./infra/redis_clusterizer
+        image: redis_clusterizer
+        container_name: clusterizer
+        hostname: clusterizer
+        command: /bin/bash /usr/local/bin/clusterize.sh
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        # # aşağıdaki ayarlar container için resource limit sağlıyor, debian ve ubuntu kernel'larında ek kernel parametresi gerekiyor
+        # cpu_count: 1
+        # mem_limit: 20m
+        # memswap_limit: 50m

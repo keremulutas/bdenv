@@ -1,0 +1,86 @@
+version: "2.3"
+
+services:
+
+    cassandra1:
+        image: cassandra:3.11.1
+        container_name: cassandra1
+        hostname: cassandra1
+        entrypoint: /infra/cassandra/cassandra-init.sh
+        command: cassandra -f -R
+        restart: always
+        ports:
+            - 9042:9042
+        environment:
+            CASSANDRA_START_RPC: "true"
+            CASSANDRA_SEEDS: cassandra1
+            CASSANDRA_CLUSTER_NAME: cassandra_cluster
+            CASSANDRA_RACK: cassandra_rack
+            CASSANDRA_DC: cassandra_dc
+            CASSANDRA_NUM_TOKENS: 8
+            CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+            MAX_HEAP_SIZE: 256M
+            HEAP_NEWSIZE: 256M
+        volumes:
+            - ./infra/cassandra:/infra/cassandra
+            - data-cassandra1:/var/lib/cassandra
+
+    cassandra2:
+        image: cassandra:3.11.1
+        container_name: cassandra2
+        hostname: cassandra2
+        entrypoint: /infra/cassandra/cassandra-init.sh
+        restart: always
+        ports:
+            - 9043:9042
+        depends_on:
+            - cassandra1
+        links:
+            - cassandra1
+        environment:
+            CASSANDRA_SLEEP: 15
+            CASSANDRA_START_RPC: "true"
+            CASSANDRA_SEEDS: cassandra1
+            CASSANDRA_CLUSTER_NAME: cassandra_cluster
+            CASSANDRA_RACK: cassandra_rack
+            CASSANDRA_DC: cassandra_dc
+            CASSANDRA_NUM_TOKENS: 8
+            CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+            MAX_HEAP_SIZE: 256M
+            HEAP_NEWSIZE: 256M
+        volumes:
+            - ./infra/cassandra:/infra/cassandra
+            - data-cassandra2:/var/lib/cassandra
+
+    cassandra3:
+        image: cassandra:3.11.1
+        container_name: cassandra3
+        hostname: cassandra3
+        entrypoint: /infra/cassandra/cassandra-init.sh
+        command: cassandra -f -R
+        restart: always
+        ports:
+            - 9044:9042
+        depends_on:
+            - cassandra1
+        links:
+            - cassandra1
+        environment:
+            CASSANDRA_SLEEP: 30
+            CASSANDRA_START_RPC: "true"
+            CASSANDRA_SEEDS: cassandra1
+            CASSANDRA_CLUSTER_NAME: cassandra_cluster
+            CASSANDRA_RACK: cassandra_rack
+            CASSANDRA_DC: cassandra_dc
+            CASSANDRA_NUM_TOKENS: 8
+            CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+            MAX_HEAP_SIZE: 256M
+            HEAP_NEWSIZE: 256M
+        volumes:
+            - ./infra/cassandra:/infra/cassandra
+            - data-cassandra3:/var/lib/cassandra
+
+volumes:
+    data-cassandra1:
+    data-cassandra2:
+    data-cassandra3:
