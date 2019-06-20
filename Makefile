@@ -9,6 +9,9 @@ log_blue = (printf '\x1B[94m>> $1\x1B[39m\n')
 comma := ,
 
 clustername = localcluster
+required_services = base
+all_services = cassandra flink hbase hive redis spark
+selected_services ?= hive flink
 
 .SILENT: help
 .PHONY: help # List of make targets and usage info
@@ -26,15 +29,13 @@ wait:
 .PHONY: stop # Stops all docker containers and removes volumes
 stop:
 	$(call log_blue,Stopping cluster$(comma) removing volumes)
-	docker-compose -p $(clustername) -f dc_base.yml -f dc_flink.yml down -v --remove-orphans
+	docker-compose -p $(clustername) $(patsubst %,-f dc_%.yml,$(required_services) $(selected_services)) down -v --remove-orphans
 
 .SILENT: start
 .PHONY: start # Starts containers
 start:
 	$(call log_blue,Starting cluster)
-	# docker-compose -f dc_base.yml -f dc_redis.yml up -d --remove-orphans --build --force-recreate --scale redis=6
-	# docker-compose -f dc_base.yml -f dc_flink.yml up -d --remove-orphans --build --force-recreate --scale taskmanager=3
-	docker-compose -p $(clustername) -f dc_base.yml -f dc_flink.yml up -d --remove-orphans --build --force-recreate
+	docker-compose -p $(clustername) $(patsubst %,-f dc_%.yml,$(required_services) $(selected_services)) up -d --remove-orphans --build --force-recreate
 
 .SILENT: reset
 .PHONY: reset # Resets containers and removes volumes
@@ -43,12 +44,12 @@ reset: stop start
 .SILENT: list
 .PHONY: list # Lists docker containers
 list:
-	for s in $$(docker-compose -p $(clustername) -f dc_base.yml -f dc_flink.yml ps -q); do servicename=$$(docker inspect --format "{{ .Name }}" $$s); ipaddress=$$(docker inspect --format "{{ .NetworkSettings.Networks.$(clustername)_default.IPAddress }}" $$s); printf "$$ipaddress $${servicename:1} \n"; done
+	for s in $$(docker-compose -p $(clustername) $(patsubst %,-f dc_%.yml,$(required_services) $(all_services)) ps -q); do servicename=$$(docker inspect --format "{{ .Name }}" $$s); ipaddress=$$(docker inspect --format "{{ .NetworkSettings.Networks.$(clustername)_default.IPAddress }}" $$s); printf "$$ipaddress\t$${servicename:1} \n"; done
 
 .SILENT: logs
 .PHONY: logs # Tail logs of container "c"
 logs:
-	@docker-compose -p $(clustername) -f dc_base.yml -f dc_flink.yml logs -f -t $(c)
+	@docker-compose -p $(clustername) $(patsubst %,-f dc_%.yml,$(required_services) $(all_services)) logs -f -t $(c)
 
 # docker cp projects/flink/target/flink-0.0.1.jar taskmanager:/
 # docker exec -it taskmanager "flink run /flink-0.0.1.jar"

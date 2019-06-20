@@ -2,125 +2,43 @@ version: "2.3"
 
 services:
 
-    zookeeper1:
+    zookeeper:
         image: zookeeper:3.4.10
-        container_name: zookeeper1
-        hostname: zookeeper1
+        container_name: zookeeper
+        hostname: zookeeper
         restart: always
         ports:
             - 2181:2181
         environment:
             ZOO_MY_ID: 1
-            ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+            ZOO_SERVERS: server.1=zookeeper:2888:3888
         volumes:
-            - data_zk_1_data:/data
-            - data_zk_1_datalog:/datalog
+            - zookeeper_data:/data
+            - zookeeper_datalog:/datalog
 
-    zookeeper2:
-        image: zookeeper:3.4.10
-        container_name: zookeeper2
-        hostname: zookeeper2
-        restart: always
-        ports:
-            - 2182:2181
-        environment:
-            ZOO_MY_ID: 2
-            ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
-        volumes:
-            - data_zk_2_data:/data
-            - data_zk_2_datalog:/datalog
-
-    zookeeper3:
-        image: zookeeper:3.4.10
-        container_name: zookeeper3
-        hostname: zookeeper3
-        restart: always
-        ports:
-            - 2183:2181
-        environment:
-            ZOO_MY_ID: 3
-            ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
-        volumes:
-            - data_zk_3_data:/data
-            - data_zk_3_datalog:/datalog
-
-    kafka1:
+    kafka:
         image: wurstmeister/kafka:2.12-2.2.1
-        container_name: kafka1
-        hostname: kafka1
+        container_name: kafka
+        hostname: kafka
         depends_on:
-            - zookeeper1
-            - zookeeper2
-            - zookeeper3
+            - zookeeper
         restart: always
         environment:
             KAFKA_BROKER_ID: 1
-            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2181,zookeeper3:2181'
+            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
             KAFKA_HEAP_OPTS: '-Xmx256M -Xms256M'
             DEFAULT_REPLICATION_FACTOR: 1
             MIN_INSYNC_REPLICAS: 1
             KAFKA_DELETE_TOPIC_ENABLE: "true"
-            # KAFKA_LISTENERS: 'kafka1'
+            # KAFKA_LISTENERS: 'kafka'
             # KAFKA_ADVERTISED_PORT: 9092
             KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
             KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
             KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
             KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
         volumes:
-            - log_kafka1:/infra/log/kafka/kafka1
-            - data_kafka1:/infra/data/kafka/kafka1
-
-    kafka2:
-        image: wurstmeister/kafka:2.12-2.2.1
-        container_name: kafka2
-        hostname: kafka2
-        depends_on:
-            - zookeeper1
-            - zookeeper2
-            - zookeeper3
-        restart: always
-        environment:
-            KAFKA_BROKER_ID: 2
-            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2181,zookeeper3:2181'
-            KAFKA_HEAP_OPTS: '-Xmx256M -Xms256M'
-            DEFAULT_REPLICATION_FACTOR: 1
-            MIN_INSYNC_REPLICAS: 1
-            KAFKA_DELETE_TOPIC_ENABLE: "true"
-            # KAFKA_LISTENERS: 'kafka1'
-            # KAFKA_ADVERTISED_PORT: 9092
-            KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-            KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-            KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-        volumes:
-            - log_kafka2:/infra/log/kafka/kafka2
-            - data_kafka2:/infra/data/kafka/kafka2
-
-    kafka3:
-        image: wurstmeister/kafka:2.12-2.2.1
-        container_name: kafka3
-        hostname: kafka3
-        depends_on:
-            - zookeeper1
-            - zookeeper2
-            - zookeeper3
-        restart: always
-        environment:
-            KAFKA_BROKER_ID: 3
-            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2181,zookeeper3:2181'
-            KAFKA_HEAP_OPTS: '-Xmx256M -Xms256M'
-            DEFAULT_REPLICATION_FACTOR: 1
-            MIN_INSYNC_REPLICAS: 1
-            KAFKA_DELETE_TOPIC_ENABLE: "true"
-            # KAFKA_LISTENERS: 'kafka1'
-            # KAFKA_ADVERTISED_PORT: 9092
-            KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-            KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-            KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-        volumes:
-            - log_kafka3:/infra/log/kafka/kafka3
-            - data_kafka3:/infra/data/kafka/kafka3
+            - kafka_log:/infra/log/kafka/kafka
+            - kafka_data:/infra/data/kafka/kafka
 
     httpsink:
         image: debian:jessie-slim
@@ -135,16 +53,67 @@ services:
             - ./infra/httpsink/httpsink:/httpsink
         entrypoint: /httpsink
 
+    namenode:
+        image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+        container_name: namenode
+        hostname: namenode
+        restart: always
+        volumes:
+            - namenode:/hadoop/dfs/name
+        environment:
+            - CLUSTER_NAME=test
+        env_file:
+            - ./infra/hadoop/hadoop.env
+
+    datanode:
+        image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+        container_name: datanode
+        hostname: datanode
+        restart: always
+        volumes:
+            - datanode:/hadoop/dfs/data
+        env_file:
+            - ./infra/hadoop/hadoop.env
+        environment:
+            SERVICE_PRECONDITION: "namenode:50070"
+
+    resourcemanager:
+        image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+        container_name: resourcemanager
+        hostname: resourcemanager
+        restart: always
+        environment:
+            SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+        env_file:
+            - ./infra/hadoop/hadoop.env
+
+    nodemanager:
+        image: bde2020/hadoop-nodemanager:2.0.0-hadoop2.7.4-java8
+        container_name: nodemanager
+        hostname: nodemanager
+        restart: always
+        environment:
+            SERVICE_PRECONDITION: "namenode:50070 datanode:50075 resourcemanager:8088"
+        env_file:
+            - ./infra/hadoop/hadoop.env
+
+    historyserver:
+        image: bde2020/hadoop-historyserver:2.0.0-hadoop2.7.4-java8
+        container_name: historyserver
+        hostname: historyserver
+        restart: always
+        volumes:
+            - historyserver:/hadoop/yarn/timeline
+        environment:
+            SERVICE_PRECONDITION: "namenode:50070 datanode:50075 resourcemanager:8088"
+        env_file:
+            - ./infra/hadoop/hadoop.env
+
 volumes:
-    data_zk_1_data:
-    data_zk_1_datalog:
-    data_zk_2_data:
-    data_zk_2_datalog:
-    data_zk_3_data:
-    data_zk_3_datalog:
-    data_kafka1:
-    log_kafka1:
-    data_kafka2:
-    log_kafka2:
-    data_kafka3:
-    log_kafka3:
+    zookeeper_data:
+    zookeeper_datalog:
+    kafka_data:
+    kafka_log:
+    datanode:
+    namenode:
+    historyserver:
