@@ -11,7 +11,7 @@ comma := ,
 clustername = localcluster
 required_services = base
 all_services = cassandra flink hbase hive redis spark
-selected_services ?= hive flink
+selected_services ?= flink spark
 
 .SILENT: help
 .PHONY: help # List of make targets and usage info
@@ -55,3 +55,7 @@ logs:
 # docker exec -it taskmanager "flink run /flink-0.0.1.jar"
 # docker exec -it kafka1 "kafka-console-producer.sh --broker-list kafka1:9092 --topic flink_input"
 # docker exec -it kafka1 "kafka-console-consumer.sh --bootstrap-server kafka1:9092 --topic flink_input"
+
+# https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#quick-example
+# docker exec -it spark-worker bash -c "nc -lk -s localhost -p 9999"
+# docker exec -it spark-worker bash -c "spark/bin/spark-submit spark/examples/src/main/python/sql/streaming/structured_network_wordcount.py localhost 9999"
