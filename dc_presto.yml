@@ -1,0 +1,17 @@
+version: "2.3"
+
+services:
+
+    presto:
+        image: prestosql/presto:326
+        container_name: presto
+        hostname: presto
+        restart: always
+        ports:
+            - "18080:8080"
+        volumes:
+            - presto_data:/prestoData
+            - ./infra/presto:/etc/presto
+
+volumes:
+    presto_data:

@@ -58,24 +58,24 @@ services:
         container_name: namenode
         hostname: namenode
         restart: always
-        volumes:
-            - namenode:/hadoop/dfs/name
         environment:
             - CLUSTER_NAME=test
         env_file:
             - ./infra/hadoop/hadoop.env
+        volumes:
+            - namenode_data:/hadoop/dfs/name
 
     datanode:
         image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
         container_name: datanode
         hostname: datanode
         restart: always
-        volumes:
-            - datanode:/hadoop/dfs/data
         env_file:
             - ./infra/hadoop/hadoop.env
         environment:
             SERVICE_PRECONDITION: "namenode:50070"
+        volumes:
+            - datanode_data:/hadoop/dfs/data
 
     resourcemanager:
         image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
@@ -102,18 +102,18 @@ services:
         container_name: historyserver
         hostname: historyserver
         restart: always
-        volumes:
-            - historyserver:/hadoop/yarn/timeline
         environment:
             SERVICE_PRECONDITION: "namenode:50070 datanode:50075 resourcemanager:8088"
         env_file:
             - ./infra/hadoop/hadoop.env
+        volumes:
+            - historyserver_data:/hadoop/yarn/timeline
 
 volumes:
     zookeeper_data:
     zookeeper_datalog:
     kafka_data:
     kafka_log:
-    datanode:
-    namenode:
-    historyserver:
+    datanode_data:
+    namenode_data:
+    historyserver_data:

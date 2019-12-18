@@ -14,6 +14,9 @@ services:
             SERVICE_PRECONDITION: "hive-metastore:9083"
         ports:
             - "10000:10000"
+            - "10002:10002"
+        volumes:
+            - hive:/data
 
     hive-metastore:
         image: bde2020/hive:2.3.2-postgresql-metastore
@@ -22,6 +25,8 @@ services:
         restart: always
         env_file:
             - ./infra/hive/hive.env
+        ports:
+            - "9083:9083"
         command: /opt/hive/bin/hive --service metastore
         environment:
             SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
@@ -33,5 +38,4 @@ services:
         restart: always
 
 volumes:
-    namenode:
-    datanode:
+    hive:

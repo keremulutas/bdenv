@@ -10,8 +10,8 @@ comma := ,
 
 clustername = localcluster
 required_services = base
-all_services = cassandra flink hbase hive redis spark
-selected_services ?= flink spark
+all_services = cassandra flink hbase hive redis spark presto
+selected_services ?= hive presto
 
 .SILENT: help
 .PHONY: help # List of make targets and usage info
